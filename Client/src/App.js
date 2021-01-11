@@ -173,7 +173,6 @@ const App = () => {
                   type="password"
                   className="form-control"
                   id="exampleInputPassword1"
-                  value={newPassword}
                   onChange={saveNewPassword}
                   required
                 ></input>
