@@ -102,21 +102,31 @@ const App = () => {
         }
       });
   }, []);
-  
+
+  const fals = () => false;
+  const onEnter = (event) => {
+    fals();
+    if (event.keyCode === 13) {
+      login();
+    }
+  };
+
   return (
     // {!loggedIn?}
     <>
       {loggedIn ? (
-        <MainRoute setLoggedIn={setLoggedIn} username={newUser} setNewUser={setNewUser}/>
+        <MainRoute
+          setLoggedIn={setLoggedIn}
+          username={newUser}
+          setNewUser={setNewUser}
+        />
       ) : (
         <div className="container" style={{}}>
-          <form>
+          <form onSubmit={fals} onKeyDown={onEnter}>
             <div
               style={{
                 width: "400px",
                 padding: "25px",
-                //margin: "auto",
-                // marginTop: "100px",
                 alignItems: "center",
                 borderRadius: "5%",
                 textAlign: "center",
@@ -173,6 +183,7 @@ const App = () => {
                   type="password"
                   className="form-control"
                   id="exampleInputPassword1"
+                  value={newPassword}
                   onChange={saveNewPassword}
                   required
                 ></input>
