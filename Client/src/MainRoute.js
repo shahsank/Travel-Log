@@ -1,9 +1,12 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ReactMapGL, { NavigationControl, Marker, Popup } from "react-map-gl";
 import { listLogEntries, deleteLogEntry } from "./API";
 import LogEntryForm from "./LogEntryForm";
 import EditLogEntryForm from "./editLogEntryForm";
+import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import Geocoder from "react-map-gl-geocoder";
+
 
 const MainRoute = (props) => {
   const [logEntries, setLogEntries] = useState([]);
@@ -23,6 +26,24 @@ const MainRoute = (props) => {
   });
   const [deleteMode, setDeleteMode] = useState(false);
   const [showMarker, setShowMarker] = useState(true);
+  const mapRef = useRef();
+
+  const handleViewportChange = useCallback(
+    (nextViewport) => setViewport(nextViewport),
+    []
+  );
+
+  const handleGeocoderViewportChange = useCallback(
+    (nextViewport) => {
+      const geocoderDefaultOverrides = { transitionDuration: 7*1000 };
+
+      return handleViewportChange({
+        ...nextViewport,
+        ...geocoderDefaultOverrides,
+      });
+    },
+    [handleViewportChange]
+  );
 
   const getEntries = async () => {
     const logEntries = await listLogEntries();
@@ -78,17 +99,28 @@ const MainRoute = (props) => {
   return (
     <ReactMapGL
       {...viewport}
+      ref={mapRef}
       mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
-      onViewportChange={(nextViewport) => setViewport(nextViewport)}
+      onViewportChange={handleViewportChange}
       mapStyle="mapbox://styles/thecjreynolds/ck117fnjy0ff61cnsclwimyay"
       onDblClick={showAddMarkerPopup}
       {...settings}
-    >     
-<button
+    >
+      <Geocoder
+        mapRef={mapRef}
+        onViewportChange={handleGeocoderViewportChange}
+        mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+        position="top-left"
+        marker={false}
+        zoom={8}
+        collapsed={true}
+      />
+      <button
         type="button"
         className="btn btn-info"
         data-toggle="modal"
         data-target="#exampleModalCenter"
+        style={{ position: "absolute", bottom: "4%", right: "0" }}
       >
         Instructions
       </button>
@@ -139,7 +171,11 @@ const MainRoute = (props) => {
         </div>
       </div>
       <div>
-        <button className="btn btn-light" onClick={logout} style={{position: "absolute", right: 30, top:0}}>
+        <button
+          className="btn btn-light"
+          onClick={logout}
+          style={{ position: "absolute", right: 30, top: 0 }}
+        >
           Log out
         </button>
       </div>
@@ -203,58 +239,62 @@ const MainRoute = (props) => {
                 />
               ) : (
                 <>
-                {!deleteMode ? (
-                  <div className="popup">
-                    <h3>{entry.title}</h3>
-                    <p>{entry.description}</p>
-                    <small>
-                      Visited on:{" "}
-                      {new Date(entry.visitDate).toLocaleDateString()}
-                    </small>
-                    {entry.image && (
-                      <img className="img-fluid" src={entry.image} alt={entry.title} />
-                    )}
-                    <br></br>
-                    <button
-                      onClick={() => {
-                        setEditMode(true);
-                      }}
-                      className="btn btn-primary m-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-danger m-1"
-                      onClick={() => {
-                        setDeleteMode(true);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ) : (
-                  <div className="popup">
-                    <h5>Are you sure?</h5>
-                    <button
-                      className={entry._id}
-                      // eslint-disable-next-line
-                      className="btn btn-danger m-1"
-                      id={idx}
-                      onClick={deleteHandler}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      className="btn btn-primary m-1"
-                      onClick={() => {
-                        setDeleteMode(false);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </>
+                  {!deleteMode ? (
+                    <div className="popup">
+                      <h3>{entry.title}</h3>
+                      <p>{entry.description}</p>
+                      <small>
+                        Visited on:{" "}
+                        {new Date(entry.visitDate).toLocaleDateString()}
+                      </small>
+                      {entry.image && (
+                        <img
+                          className="img-fluid"
+                          src={entry.image}
+                          alt={entry.title}
+                        />
+                      )}
+                      <br></br>
+                      <button
+                        onClick={() => {
+                          setEditMode(true);
+                        }}
+                        className="btn btn-primary m-1"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-danger m-1"
+                        onClick={() => {
+                          setDeleteMode(true);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="popup">
+                      <h5>Are you sure?</h5>
+                      <button
+                        className={entry._id}
+                        // eslint-disable-next-line
+                        className="btn btn-danger m-1"
+                        id={idx}
+                        onClick={deleteHandler}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        className="btn btn-primary m-1"
+                        onClick={() => {
+                          setDeleteMode(false);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </Popup>
           ) : null}
